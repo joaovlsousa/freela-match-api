@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { PrismaService } from 'src/prisma/prisma.service';
 
+import { UpdateProfileDto } from './dtos/update-profile-dto';
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -60,6 +62,9 @@ export class UsersService {
           email,
           username: login,
           imageUrl: avatar_url,
+          profile: {
+            create: {},
+          },
         },
       });
     }
@@ -69,7 +74,7 @@ export class UsersService {
     };
   }
 
-  async getUserData(userId: number) {
+  async getUserById(userId: number) {
     const user = await this.prismaService.user.findUnique({
       where: {
         id: userId,
@@ -80,6 +85,12 @@ export class UsersService {
         username: true,
         imageUrl: true,
         createdAt: true,
+        profile: {
+          select: {
+            bio: true,
+            techs: true,
+          },
+        },
       },
     });
 
@@ -89,6 +100,65 @@ export class UsersService {
 
     return {
       user,
+    };
+  }
+
+  async getUserByUsername(username: string) {
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        username,
+      },
+      select: {
+        name: true,
+        email: true,
+        username: true,
+        imageUrl: true,
+        createdAt: true,
+        profile: {
+          select: {
+            bio: true,
+            techs: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    return {
+      user,
+    };
+  }
+
+  async updateProfile(profileData: UpdateProfileDto, userId: number) {
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+
+    const profile = await this.prismaService.profile.update({
+      where: {
+        userId,
+      },
+      data: {
+        bio: profileData.bio,
+        techs: profileData.techs,
+      },
+      select: {
+        bio: true,
+        techs: true,
+      },
+    });
+
+    return {
+      profile,
     };
   }
 }

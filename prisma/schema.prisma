@@ -14,5 +14,19 @@ model User {
   username  String   @unique
   imageUrl  String   @map("image_url")
 
+  profile   Profile?
+
   createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+model Profile {
+  userId BigInt   @id
+  user   User     @relation(fields: [userId], references: [id])
+
+  bio    String?  
+  techs  String[] 
+
+  @@map("profiles")
 }
